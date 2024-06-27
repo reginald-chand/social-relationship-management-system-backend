@@ -13,15 +13,13 @@ export const connectionController = async (request, response) => {
   const { userName, userData } = value;
 
   try {
-    let foundFollowedUser = false;
-
     const database = mongoose.connection.db;
 
     const existingUser = await database
       .collection("users")
       .findOne({ userName: { $eq: userName } });
 
-    if (!existingUser) {
+    if (existingUser === null || !existingUser) {
       return response.status(404).json({ responseMessage: "User not found." });
     }
 
@@ -32,11 +30,9 @@ export const connectionController = async (request, response) => {
       { $project: { userName: userName } },
     ]);
 
-    existingFollowings.forEach((followedUser) => {
-      if (userName === followedUser.userName) {
-        foundFollowedUser = true;
-      }
-    });
+    const foundFollowedUser = existingFollowings.some(
+      (followedUser) => userName === followedUser.userName
+    );
 
     if (foundFollowedUser) {
       await ConnectionModel.findOneAndUpdate(
