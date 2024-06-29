@@ -2,6 +2,7 @@ import { ConnectionModel } from "../../models/connection/connection.model.mjs";
 import { connectionControllerValidator } from "../../validators/connection/connection.controller.validator.mjs";
 import { logger } from "../../configs/logger.config.mjs";
 import mongoose from "mongoose";
+import { redisClient } from "../../configs/redis.client.config.mjs";
 
 export const connectionController = async (request, response) => {
   const { error, value } = connectionControllerValidator.validate(request.body);
@@ -10,9 +11,15 @@ export const connectionController = async (request, response) => {
     return response.status(400).json({ responseMessage: error.message });
   }
 
-  const { userName, userData } = value;
+  const { userName, csrfToken, userData } = value;
 
   try {
+    const userSession = await redisClient.hGetAll(userData.email);
+
+    if (csrfToken !== userSession.csrfToken) {
+      return response.status(401).json({ responseMessage: "UnAuthorized." });
+    }
+
     const database = mongoose.connection.db;
 
     const existingUser = await database
