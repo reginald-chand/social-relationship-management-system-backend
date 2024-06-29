@@ -25,7 +25,6 @@ app.use(session(sessionOptions));
 
 app.use(
   lusca({
-    csrf: true,
     csp: {
       policy: {
         "default-src": "'self'",
